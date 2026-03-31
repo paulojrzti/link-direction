@@ -1,0 +1,77 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+}
+
+model Link {
+  id                 String   @id @default(cuid())
+  slug               String   @unique
+  mode               String   @default("NORMAL")
+  currentSellerIndex Int      @default(0)
+  createdAt          DateTime @default(now())
+
+  sellers Seller[]
+  groups  Group[]
+  clicks  Click[]
+}
+
+model Seller {
+  id         String   @id @default(cuid())
+  linkId     String
+  name       String
+  phone      String
+  slug       String
+  active     Boolean  @default(true)
+  clickCount Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  link   Link    @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  clicks Click[]
+
+  @@unique([linkId, slug])
+}
+
+model Group {
+  id         String   @id @default(cuid())
+  linkId     String
+  name       String
+  inviteCode String
+  slug       String
+  active     Boolean  @default(true)
+  clickCount Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  link   Link    @relation(fields: [linkId], references: [id], onDelete: Cascade)
+  clicks Click[]
+
+  @@unique([linkId, slug])
+}
+
+model Click {
+  id        String   @id @default(cuid())
+  linkId    String
+  sellerId  String?
+  groupId   String?
+  campaign  String?
+  ip        String?
+  userAgent String?
+  mode      String
+  createdAt DateTime @default(now())
+
+  link   Link    @relation(fields: [linkId], references: [id])
+  seller Seller? @relation(fields: [sellerId], references: [id])
+  group  Group?  @relation(fields: [groupId], references: [id])
+}
