@@ -1,9 +1,21 @@
 import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/client";
 import { PrismaPg } from "@prisma/adapter-pg";
+import { Pool } from "pg";
 import bcrypt from "bcryptjs";
 
-const adapter = new PrismaPg({ connectionString: process.env.DATABASE_URL! });
+// Strip sslmode/pgbouncer from URL so the ssl object below takes full control
+const rawUrl = process.env.DATABASE_URL!.replace(/^postgres:\/\//, "postgresql://");
+const parsed = new URL(rawUrl);
+parsed.searchParams.delete("sslmode");
+parsed.searchParams.delete("pgbouncer");
+const connectionString = parsed.toString().replace(/^postgresql:\/\//, "postgres://");
+
+const pool = new Pool({
+  connectionString,
+  ssl: { rejectUnauthorized: false },
+});
+const adapter = new PrismaPg(pool);
 const prisma = new PrismaClient({ adapter });
 
 async function main() {
